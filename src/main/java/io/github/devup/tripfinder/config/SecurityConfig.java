@@ -25,7 +25,11 @@ public class SecurityConfig {
                         .requestMatchers("/api/v1/booking/**").permitAll()
                         .requestMatchers("/api/v1/board/**").permitAll()
                         .anyRequest().permitAll()   //일단 개발할떄 편해야하니까 다열어둔거
+                )
+                .oauth2Login(oauth2 -> oauth2
+                        .defaultSuccessUrl("http://localhost:5173/signup",true)
                 );
+
         return http.build();
     }
     @Bean
