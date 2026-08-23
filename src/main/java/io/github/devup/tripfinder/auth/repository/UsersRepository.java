@@ -4,6 +4,10 @@ import io.github.devup.tripfinder.auth.entity.Users;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
+import java.util.Optional;
+
 @Repository
 public interface UsersRepository extends JpaRepository<Users, Long> {
+    Optional<Users> findByProviderAndSocialUid(String provider, String socialUid);
+    Optional<Users> findByLoginEmail(String loginEmail);
 }
