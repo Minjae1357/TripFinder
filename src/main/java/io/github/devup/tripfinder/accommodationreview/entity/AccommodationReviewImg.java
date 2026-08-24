@@ -1,0 +1,27 @@
+package io.github.devup.tripfinder.accommodationreview.entity;
+
+import jakarta.persistence.*;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+@Entity
+@Table(name = "ACCOMMODATION_REVIEW_IMG")
+@Data
+@NoArgsConstructor
+public class AccommodationReviewImg {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
+    private Long id;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "review_id", nullable = false)
+    private AccommodationReview reviewId;
+
+    @Column(name = "img_url")
+    private String imgUrl;
+
+    @Column(name = "img_order")
+    private Integer order;
+
+}
