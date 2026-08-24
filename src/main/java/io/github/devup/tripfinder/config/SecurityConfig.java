@@ -5,7 +5,6 @@ import io.github.devup.tripfinder.config.jwt.JwtAuthenticationFilter;
 import io.github.devup.tripfinder.config.jwt.JwtProvider;
 import io.github.devup.tripfinder.config.jwt.OAuth2LoginSuccessHandler;
 import lombok.RequiredArgsConstructor;
-import org.apache.catalina.User;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;

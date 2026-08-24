@@ -42,7 +42,7 @@ public class JwtProvider {
         return createToken(userId,null,refreshTokenExpiration);
     }
 
-    private String createToken(Long userId,String role, long expiration){
+    public String createToken(Long userId,String role, long expiration){
         Date now = new Date();
         JwtBuilder builder = Jwts.builder()
                 .subject(String.valueOf(userId)) //JWT의 sub 클레임 누구꺼인지

@@ -1,10 +1,15 @@
 package io.github.devup.tripfinder.auth.service;
 
 import io.github.devup.tripfinder.auth.dto.oauth.OAuth2UserInfo;
+import io.github.devup.tripfinder.auth.dto.request.LoginRequest;
 import io.github.devup.tripfinder.auth.dto.request.SignupRequest;
+import io.github.devup.tripfinder.auth.dto.response.TokenResponse;
 import io.github.devup.tripfinder.auth.entity.Users;
 import io.github.devup.tripfinder.auth.repository.UsersRepository;
+import io.github.devup.tripfinder.config.jwt.JwtProvider;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -13,11 +18,21 @@ import org.springframework.transaction.annotation.Transactional;
 public class AuthService {
 
     private final UsersRepository usersRepository;
+    private final JwtProvider jwtProvider;
+    private final EmailService emailService;
 
+    @Transactional
     public Users signup(SignupRequest signupRequest) {
+        if(!emailService.isEmailVerified(signupRequest.getLoginEmail())){
+            throw new IllegalArgumentException("이메일 인증이 필요합니다.");
+        }
+
+        BCryptPasswordEncoder passwordEncoder =new BCryptPasswordEncoder();
+        String encodePassword = passwordEncoder.encode(signupRequest.getLoginPassword());
+
         Users user = Users.builder()
                 .loginEmail(signupRequest.getLoginEmail())
-                .loginPassword(signupRequest.getLoginPassword())
+                .loginPassword(encodePassword)
                 .provider("local")
                 .nickname(signupRequest.getNickname())
                 .location(signupRequest.getLocation())
@@ -40,5 +55,22 @@ public class AuthService {
                             .build();
                     return usersRepository.save(newUser);
                 });
+    }
+
+    @Transactional(readOnly = true)
+    public TokenResponse login(LoginRequest loginRequest){
+        // 유저를 확인하고
+        Users user = usersRepository.findByLoginEmail(loginRequest.getLoginEmail())
+                .orElseThrow(() -> new IllegalArgumentException("가입되지않은 이메일 입니다."));
+        // 비밀버놓 검증
+        BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
+        if(!passwordEncoder.matches(loginRequest.getLoginPassword(),user.getLoginPassword())){
+            throw new IllegalArgumentException("비밀번호가 일치하지 않습니다.");
+        }
+        // Jwtprovider에서 토큰 생성만 요청
+        String accessToken = jwtProvider.createAccessToken(user.getId(),"ROLE_USER");
+        String refreshToken = jwtProvider.createRefreshToken(user.getId());
+
+        return new TokenResponse(accessToken,refreshToken);
     }
 }
