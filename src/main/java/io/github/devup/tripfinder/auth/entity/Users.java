@@ -48,6 +48,7 @@ public class Users {
     @Column(name="age_group", length = 20)
     private String ageGroup;
 
+    @Column(name="gender")
     private Integer gender;
 
     @Column(nullable = false)
