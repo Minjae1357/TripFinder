@@ -1,6 +1,7 @@
 package io.github.devup.tripfinder.accommodation.service;
 
 import io.github.devup.tripfinder.accommodation.dto.response.AccommodationDetailResponse;
+import io.github.devup.tripfinder.accommodation.dto.response.AccommodationListResponse;
 import io.github.devup.tripfinder.accommodation.dto.response.RoomResponse;
 import io.github.devup.tripfinder.accommodation.entity.Accommodation;
 import io.github.devup.tripfinder.accommodation.entity.Room;
@@ -22,6 +23,18 @@ public class AccommodationService {
     private final RoomRepository roomRepository;
     private final RoomImgRepository roomImgRepository;
 
+    @Transactional(readOnly = true)
+    public List<AccommodationListResponse> getAccommodationList() {
+        return accommodationRepository.findAll().stream()
+                .map(accommodationList -> new AccommodationListResponse(
+                        accommodationList.getAccommodationId(),
+                        accommodationList.getAccommodationName(),
+                        accommodationList.getAccommodationType(),
+                        accommodationList.getAccommodationLat(),
+                        accommodationList.getAccommodationLng()
+                ))
+                .toList();
+    }
     // 상세 조회
     @Transactional(readOnly = true)
     public AccommodationDetailResponse getAccommodationDetail(Long accommodationId) {
