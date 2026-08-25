@@ -23,17 +23,26 @@ public class AuthService {
 
     @Transactional
     public Users signup(SignupRequest signupRequest) {
-        if(!emailService.isEmailVerified(signupRequest.getLoginEmail())){
-            throw new IllegalArgumentException("이메일 인증이 필요합니다.");
-        }
 
+        boolean isSocial = signupRequest.getSocialUid() != null;
+        System.out.println(isSocial);
+        if(!isSocial) {
+            if(!emailService.isEmailVerified(signupRequest.getLoginEmail())){
+                throw new IllegalArgumentException("이메일 인증이 필요합니다.");
+            }
+        }
+        String encodedPassword = null;
         BCryptPasswordEncoder passwordEncoder =new BCryptPasswordEncoder();
-        String encodePassword = passwordEncoder.encode(signupRequest.getLoginPassword());
+        encodedPassword = passwordEncoder.encode(signupRequest.getLoginPassword());
+
+
+
 
         Users user = Users.builder()
                 .loginEmail(signupRequest.getLoginEmail())
-                .loginPassword(encodePassword)
-                .provider("local")
+                .loginPassword(encodedPassword)
+                .provider(isSocial ? signupRequest.getProvider() : "local")
+                .socialUid(isSocial ? signupRequest.getSocialUid() : null)
                 .nickname(signupRequest.getNickname())
                 .location(signupRequest.getLocation())
                 .ageGroup(signupRequest.getAgeGroup())
@@ -45,7 +54,8 @@ public class AuthService {
     @Transactional
     public Users socialLoginOrSignUp(OAuth2UserInfo userInfo){
         return usersRepository.findByProviderAndSocialUid(userInfo.getProvider(),userInfo.getProviderId())
-                .orElseGet(() ->{
+                .orElseGet(() ->{ //Optional 클래스에서 "값이 비어있을(null일) 때만 대체 값을 생성하여 반환
+                                  //Optional : 값이 존재할 수도 있고, null일 수도 있는 객체"를 감싸는 Wrapper(래퍼) 클래스
                     Users newUser = Users.builder()
                             .provider(userInfo.getProvider())
                             .socialUid(userInfo.getProviderId())

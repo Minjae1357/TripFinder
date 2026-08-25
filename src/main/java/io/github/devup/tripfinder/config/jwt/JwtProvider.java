@@ -28,6 +28,8 @@ public class JwtProvider {
             @Value("${jwt.access-token-expiration}") long accessTokenExpiration,
             @Value("${jwt.refresh-token-expiration}") long refreshTokenExpiration
     ){
+        //JJWT에서 라이브러리가 제공하는 유틸리티 메서드 전달받은 바이트를 바탕으로 HMAC-SHA 알고리즘에 적합한 SecretKey 객체를 반환
+        //HMAC-SHA 는 비밀키를 섞어서 만든 암호화 위변조 방지용 도장(서명) 기술
         this.key = Keys.hmacShaKeyFor(Decoders.BASE64.decode(secret));
         this.accessTokenExpiration = accessTokenExpiration;
         this.refreshTokenExpiration = refreshTokenExpiration;

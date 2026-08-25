@@ -41,6 +41,7 @@ public class SecurityConfig {
                         .userInfoEndpoint(userInfo -> userInfo.userService(customOAuth2UserService))
                         .successHandler( oAuth2LoginSuccessHandler)
                 )
+                //이부분은 b 가실행되기전에 a먼저실행시키는부분 jwt를먼저확인하고 로그인절차를안하려고해둔곳
                 .addFilterBefore(new JwtAuthenticationFilter(jwtProvider), UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
