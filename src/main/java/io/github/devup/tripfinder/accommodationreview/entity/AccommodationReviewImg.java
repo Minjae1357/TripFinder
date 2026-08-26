@@ -16,12 +16,12 @@ public class AccommodationReviewImg {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "review_id", nullable = false)
-    private AccommodationReview reviewId;
+    private AccommodationReview review;
 
     @Column(name = "img_url")
     private String imgUrl;
 
     @Column(name = "img_order")
-    private Integer order;
+    private Integer imgOrder;
 
 }

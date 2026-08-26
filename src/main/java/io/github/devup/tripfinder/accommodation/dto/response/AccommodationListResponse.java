@@ -7,6 +7,5 @@ public record AccommodationListResponse(
         String accommodationName,
         double accommodationLat,
         double accommodationLng
-
 ) {
 }

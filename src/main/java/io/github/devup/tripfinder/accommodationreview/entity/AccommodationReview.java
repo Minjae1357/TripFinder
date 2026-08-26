@@ -22,14 +22,19 @@ public class AccommodationReview {
     @JoinColumn(name = "accommodation_id", nullable = false)
     private Accommodation accommodation;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", nullable = false)
-    private Users userid;
+    // USER구현 후
+//    @ManyToOne(fetch = FetchType.LAZY)
+//    @JoinColumn(name = "user_id", nullable = false)
+//    private Users userid;
+
+    // test용 user entity
+    @Column(name = "user_id", nullable = false)
+    private Long userId;
 
     @Column(name = "star")
     private Byte star;
 
-    @Column(name = "review_contents")
+    @Column(name = "review_contents", length = 1000)
     private String reviewContents;
 
     @Column(name = "created_at", insertable = false, updatable = false)
