@@ -78,9 +78,13 @@ public class AuthService {
             throw new IllegalArgumentException("비밀번호가 일치하지 않습니다.");
         }
         // Jwtprovider에서 토큰 생성만 요청
-        String accessToken = jwtProvider.createAccessToken(user.getId(),"ROLE_USER");
+        String accessToken = jwtProvider.createAccessToken(user.getId(),user.getRole());
         String refreshToken = jwtProvider.createRefreshToken(user.getId());
 
         return new TokenResponse(accessToken,refreshToken);
+    }
+
+    public boolean isEmailDuplicate(String email) {
+        return usersRepository.existsByLoginEmail(email);
     }
 }

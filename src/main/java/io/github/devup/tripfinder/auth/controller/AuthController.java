@@ -47,4 +47,9 @@ public class AuthController {
     public TokenResponse login(@RequestBody LoginRequest loginRequest){
         return authService.login(loginRequest);
     }
+
+    @PostMapping("/check-email")
+    public boolean checkEmailDuplicate(@RequestBody EmailRequest emailRequest){
+        return authService.isEmailDuplicate(emailRequest.getEmail());
+    }
 }
