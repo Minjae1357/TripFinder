@@ -13,7 +13,7 @@ import java.time.LocalDateTime;
 @Entity
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @EntityListeners(AuditingEntityListener.class) // 엔티티가 Auditing감시대상등록 created_at, updated_at 자동 갱신용
-@Table(name="USERS",uniqueConstraints = {
+@Table(name="users",uniqueConstraints = {
         @UniqueConstraint(name="UK_login_email",columnNames = "login_email"),
         @UniqueConstraint(name="UK_provider_social_uid",columnNames = {"provider","social_uid"})
 })

@@ -10,6 +10,7 @@ public record AccommodationReviewResponse(
         Byte star,
         String reviewContents,
         LocalDateTime createdAt,
+        LocalDateTime updatedAt,
         List<String> reviewImgUrls
 
 ) {

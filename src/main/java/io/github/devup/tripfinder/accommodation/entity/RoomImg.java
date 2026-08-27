@@ -5,7 +5,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Entity
-@Table(name = "ROOM_IMG")
+@Table(name = "room_img")
 @Data
 @NoArgsConstructor
 public class RoomImg {

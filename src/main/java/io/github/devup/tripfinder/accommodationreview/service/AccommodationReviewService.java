@@ -1,11 +1,15 @@
 package io.github.devup.tripfinder.accommodationreview.service;
 
-import io.github.devup.tripfinder.accommodation.service.AccommodationService;
+import io.github.devup.tripfinder.accommodation.repository.AccommodationRepository;
+import io.github.devup.tripfinder.accommodationreview.dto.request.AccommodationReviewCreateRequest;
+import io.github.devup.tripfinder.accommodation.entity.Accommodation;
+import io.github.devup.tripfinder.accommodationreview.dto.request.AccommodationReviewUpdateRequest;
 import io.github.devup.tripfinder.accommodationreview.dto.response.AccommodationReviewPageResponse;
 import io.github.devup.tripfinder.accommodationreview.dto.response.AccommodationReviewResponse;
 import io.github.devup.tripfinder.accommodationreview.dto.response.AccommodationReviewSummaryResponse;
 import io.github.devup.tripfinder.accommodationreview.entity.AccommodationReview;
 import io.github.devup.tripfinder.accommodationreview.entity.AccommodationReviewImg;
+import io.github.devup.tripfinder.accommodationreview.exception.AccommodationReviewEditCooldownException;
 import io.github.devup.tripfinder.accommodationreview.repository.AccommodationReviewImgRepository;
 import io.github.devup.tripfinder.accommodationreview.repository.AccommodationReviewRepository;
 import lombok.RequiredArgsConstructor;
@@ -13,10 +17,12 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
-import org.springframework.data.repository.Repository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.time.Duration;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
@@ -24,8 +30,95 @@ import java.util.List;
 public class AccommodationReviewService {
     private final AccommodationReviewRepository accommodationReviewRepository;
     private final AccommodationReviewImgRepository accommodationReviewImgRepository;
+    private final AccommodationRepository accommodationRepository;
+    private final FileStorageService fileStorageService;
+
+    private static final Long TEMP_USER_ID = 1L; // 테스트용 임시 고정 user_id
+
+    // 리뷰 쓰기
+    @Transactional
+    public Long createReview(Long accommodationId, AccommodationReviewCreateRequest request, List<MultipartFile> images) {
+        Accommodation accommodation = accommodationRepository.findById(accommodationId).orElseThrow(()-> new IllegalArgumentException("숙소를 찾을 수 없습니다. id=" + accommodationId));
+
+        AccommodationReview review = new AccommodationReview();
+        review.setAccommodation(accommodation);
+        review.setUserId(TEMP_USER_ID);
+        review.setStar(request.star());
+        review.setReviewContents(request.reviewContents());
+
+        AccommodationReview savedReview = accommodationReviewRepository.save(review);
+
+        // 이미지가 있을떄만 저장( 사진 없이 리뷰 쓸 가능성 )
+        if(images != null && !images.isEmpty()) {
+            int order = 1;
+            for(MultipartFile image : images) {
+                if(image.isEmpty()) continue; // 빈 파일 건너뛰기
+
+                String imgUrl = fileStorageService.store(image); // 디스크에 저장후 URL 받아옴
+
+                AccommodationReviewImg reviewImg = new AccommodationReviewImg();
+                reviewImg.setReview(savedReview);
+                reviewImg.setImgUrl(imgUrl);
+                reviewImg.setImgOrder(order++);
+                accommodationReviewImgRepository.save(reviewImg);
+            }
+        }
+        return savedReview.getReviewId();
+    }
+
+    // 리뷰 수정
+    @Transactional
+    public void updateReview(Long reviewId, AccommodationReviewUpdateRequest request) {
+        AccommodationReview review = accommodationReviewRepository.findById(reviewId).orElseThrow(() -> new IllegalArgumentException("리뷰를 찾을 수 없습니다. ID = "+reviewId));
+
+        // 본인 확인(로그인 합치기 전까지 TEMP_USER_ID와 비교)
+        validateOwner(review);
+        validateEditCooldown(review); // 리뷰 수정 10초 제한 추가
+
+        review.setStar(request.star());
+        review.setReviewContents(request.reviewContents());
+    }
+
+    private static final long EDIT_COOLDOWN_SECONDS =10; // 마지막 수정, 등록 후 10초가 지나지 않았으면 예외 발생
+
+    // 수정, 등록 10초 이내 수정시 던지는 예외 처리
+    private void validateEditCooldown(AccommodationReview review) {
+        LocalDateTime lastModified = review.getUpdatedAt();
+        long secondsSinceLastEdit = Duration.between(lastModified, LocalDateTime.now()).getSeconds();
+
+        if(secondsSinceLastEdit < EDIT_COOLDOWN_SECONDS){
+            long remainingSeconds = EDIT_COOLDOWN_SECONDS - secondsSinceLastEdit;
+            throw new AccommodationReviewEditCooldownException(remainingSeconds + "초 후에 다시 시도해주세요.");
+        }
+    }
+
+    // 리뷰 삭제
+    @Transactional
+    public void deleteReview(Long reviewId) {
+        AccommodationReview review = accommodationReviewRepository.findById(reviewId).orElseThrow(() -> new IllegalArgumentException("리뷰를 찾을 수 업습니다. ID = "+reviewId));
+
+        validateOwner(review);
+
+        accommodationReviewImgRepository.deleteAll(accommodationReviewImgRepository.findByReview_ReviewIdOrderByImgOrder(reviewId));
+        accommodationReviewRepository.delete(review);
+    }
+
+    // 작성자 검증
+    private void validateOwner(AccommodationReview review) {
+        if(!review.getUserId().equals(TEMP_USER_ID)) {
+            throw new IllegalStateException("본인이 작성한 리뷰만 수정/삭제할 수 있습니다.");
+        }
+    }
+
+    // 리뷰 하나만 검색
+    @Transactional(readOnly = true)
+    public AccommodationReviewResponse getReview(Long reviewId) {
+        AccommodationReview review = accommodationReviewRepository.findById(reviewId).orElseThrow(() -> new IllegalArgumentException("리뷰를 찾을 수 없습니다. id = "+reviewId));
+        return toResponse(review);
+    }
 
 
+    // 리뷰 페이징
     @Transactional(readOnly = true)
     public AccommodationReviewPageResponse getReviews(Long accommodationId, String sort, int page, int size){
 
@@ -82,6 +175,7 @@ public class AccommodationReviewService {
                 review.getStar(),
                 review.getReviewContents(),
                 review.getCreatedAt(),
+                review.getUpdatedAt(),
                 reviewImgUrls
         );
     }

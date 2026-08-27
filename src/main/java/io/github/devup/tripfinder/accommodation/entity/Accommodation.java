@@ -8,7 +8,7 @@ import java.math.BigInteger;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "ACCOMMODATION")
+@Table(name = "accommodation")
 @Data
 @NoArgsConstructor
 public class Accommodation {
