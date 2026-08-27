@@ -67,10 +67,10 @@ public class AuthService {
                 });
     }
 
-    @Transactional(readOnly = true)
+    @Transactional
     public TokenResponse login(LoginRequest loginRequest){
         // 유저를 확인하고
-        Users user = usersRepository.findByLoginEmail(loginRequest.getLoginEmail())
+        Users user = usersRepository.findByLoginEmailAndProvider(loginRequest.getLoginEmail(),"local")
                 .orElseThrow(() -> new IllegalArgumentException("가입되지않은 이메일 입니다."));
         // 비밀버놓 검증
         BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
@@ -81,8 +81,28 @@ public class AuthService {
         String accessToken = jwtProvider.createAccessToken(user.getId(),user.getRole());
         String refreshToken = jwtProvider.createRefreshToken(user.getId());
 
+        // 재발급 시 대조하기 위해 DB에도 저장해둠 (탈취된 옛날 refreshToken 재사용 방지)
+        user.updateRefreshToken(refreshToken);
+
         return new TokenResponse(accessToken,refreshToken);
     }
+
+    @Transactional(readOnly = true)
+    public String reissueAccessToken(String refreshToken){
+        if(!jwtProvider.validateToken(refreshToken)){
+            throw new IllegalArgumentException("유효하지 않거나 만료된 토큰입니다. 다시 로그인해주세요.");
+        }
+
+        Long userId = jwtProvider.getUserId(refreshToken);
+        Users user = usersRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("유효하지 않은 토큰입니다. 다시 로그인해주세요."));
+
+        if(!refreshToken.equals(user.getRefreshToken())){
+            throw new IllegalArgumentException("유효하지 않은 토큰입니다. 다시 로그인해주세요.");
+        }
+        return jwtProvider.createAccessToken(user.getId(),user.getRole());
+    }
+
 
     @Transactional
     public boolean isEmailDuplicate(String email,String provider) {

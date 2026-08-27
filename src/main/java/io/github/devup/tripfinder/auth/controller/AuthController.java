@@ -8,18 +8,25 @@ import io.github.devup.tripfinder.auth.dto.response.TokenResponse;
 import io.github.devup.tripfinder.auth.entity.Users;
 import io.github.devup.tripfinder.auth.service.AuthService;
 import io.github.devup.tripfinder.auth.service.EmailService;
+import io.github.devup.tripfinder.config.jwt.JwtProvider;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.NoArgsConstructor;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Map;
 
-@CrossOrigin(origins = "http://localhost:5173")
+
+//@CrossOrigin(origins = "http://localhost:5173")
 @RequiredArgsConstructor
 @RestController
 @RequestMapping("/api/v1/auth")
 public class AuthController {
 
+    private final JwtProvider jwtProvider;
     private final AuthService authService;
     private final EmailService emailService;
 
@@ -43,8 +50,12 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    public TokenResponse login(@RequestBody LoginRequest loginRequest){
-        return authService.login(loginRequest);
+    public ResponseEntity<?> login(@RequestBody LoginRequest loginRequest, HttpServletResponse response){
+        TokenResponse tokens = authService.login(loginRequest);
+
+        ResponseCookie cookie = jwtProvider.createRefreshTokenCookie(tokens.getRefreshToken());
+        response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
+        return ResponseEntity.ok(Map.of("accessToken", tokens.getAccessToken()));
     }
 
     @PostMapping("/email-check")

@@ -6,8 +6,10 @@ import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
+import lombok.Getter;
 import org.springframework.beans.factory.annotation.Value;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.ResponseCookie;
 import org.springframework.stereotype.Component;
 
 import javax.crypto.SecretKey;
@@ -77,4 +79,15 @@ public class JwtProvider {
                 .parseSignedClaims(token) //파싱 (서명이안맞으면 여기서 예외가터짐)
                 .getPayload(); //실제 클레임 (sub,iat,exp,role 등등)
     }
+
+    public ResponseCookie createRefreshTokenCookie(String refreshToken){
+        return ResponseCookie.from("refreshToken",refreshToken)
+                .httpOnly(true)
+                .secure(false) //배포 시 https면 true로 변경해야함
+                .sameSite("Lax")
+                .path("/api/v1/auth")
+                .maxAge(refreshTokenExpiration/1000)
+                .build();
+    }
+
 }
