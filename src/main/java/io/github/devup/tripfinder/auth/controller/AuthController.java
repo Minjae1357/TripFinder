@@ -32,7 +32,6 @@ public class AuthController {
     @PostMapping("/email-verify")
     public void verifyEmail(@RequestBody EmailVerifyRequest request){
         boolean isVerified = emailService.verifyCode(request.getEmail(),request.getCode());
-
         if(!isVerified){
             throw new IllegalArgumentException("인증버호가 일치하지 않거나 만료되었습니다.");
         }
@@ -48,8 +47,8 @@ public class AuthController {
         return authService.login(loginRequest);
     }
 
-    @PostMapping("/check-email")
+    @PostMapping("/email-check")
     public boolean checkEmailDuplicate(@RequestBody EmailRequest emailRequest){
-        return authService.isEmailDuplicate(emailRequest.getEmail());
+        return authService.isEmailDuplicate(emailRequest.getEmail(),emailRequest.getProvider());
     }
 }

@@ -10,5 +10,5 @@ import java.util.Optional;
 public interface UsersRepository extends JpaRepository<Users, Long> {
     Optional<Users> findByProviderAndSocialUid(String provider, String socialUid);
     Optional<Users> findByLoginEmail(String loginEmail);
-    boolean existsByLoginEmail(String loginEmail); //    // 조건을 만족하는 데이터 존재 시 종료
+    boolean existsByLoginEmailAndProvider(String email,String provider); // 조건을 만족하는 데이터 존재 시 종료
 }

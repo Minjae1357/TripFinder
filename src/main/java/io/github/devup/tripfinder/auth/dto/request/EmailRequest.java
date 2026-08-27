@@ -7,4 +7,5 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class EmailRequest {
     private  String email;
+    private String provider;
 }

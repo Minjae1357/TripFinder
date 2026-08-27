@@ -84,7 +84,8 @@ public class AuthService {
         return new TokenResponse(accessToken,refreshToken);
     }
 
-    public boolean isEmailDuplicate(String email) {
-        return usersRepository.existsByLoginEmail(email);
+    @Transactional
+    public boolean isEmailDuplicate(String email,String provider) {
+        return usersRepository.existsByLoginEmailAndProvider(email,provider);
     }
 }

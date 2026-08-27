@@ -15,7 +15,7 @@ import java.time.LocalDateTime;
 @EntityListeners(AuditingEntityListener.class) // 엔티티가 Auditing감시대상등록 created_at, updated_at 자동 갱신용
 @Table(name="USERS",uniqueConstraints = {
         //고유제약조건
-        @UniqueConstraint(name="UK_login_email",columnNames = "login_email"),
+        @UniqueConstraint(name="UK_login_email_provider",columnNames = {"login_email","provider"}),
         @UniqueConstraint(name="UK_provider_social_uid",columnNames = {"provider","social_uid"})
 })
 public class Users {
