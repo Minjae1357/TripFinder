@@ -5,6 +5,7 @@ import io.github.devup.tripfinder.auth.dto.request.EmailVerifyRequest;
 import io.github.devup.tripfinder.auth.dto.request.LoginRequest;
 import io.github.devup.tripfinder.auth.dto.request.SignupRequest;
 import io.github.devup.tripfinder.auth.dto.response.TokenResponse;
+import io.github.devup.tripfinder.auth.dto.response.UserInfoResponse;
 import io.github.devup.tripfinder.auth.entity.Users;
 import io.github.devup.tripfinder.auth.service.AuthService;
 import io.github.devup.tripfinder.auth.service.EmailService;
@@ -15,6 +16,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
@@ -57,9 +59,29 @@ public class AuthController {
         response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
         return ResponseEntity.ok(Map.of("accessToken", tokens.getAccessToken()));
     }
+    @PostMapping("/logout")
+    public ResponseEntity<?> logout(Authentication authentication, HttpServletResponse response){
+        if(authentication == null){
+            throw new IllegalArgumentException("로그인이 필요합니다.");
+        }
+        Long userId = (Long) authentication.getPrincipal();
+        ResponseCookie cookie = authService.logout(userId);
+        response.addHeader(HttpHeaders.SET_COOKIE,cookie.toString());
+        return ResponseEntity.ok().build();
+    }
 
     @PostMapping("/email-check")
     public boolean checkEmailDuplicate(@RequestBody EmailRequest emailRequest){
         return authService.isEmailDuplicate(emailRequest.getEmail(),emailRequest.getProvider());
+    }
+
+    @GetMapping("/me")
+    public ResponseEntity<?> getMe(Authentication  authentication){
+        if(authentication == null){
+            throw new IllegalArgumentException("로그인이 필요합니다");
+        }
+        Long userId = (Long) authentication.getPrincipal();
+        UserInfoResponse me = authService.getMe(userId);
+        return ResponseEntity.ok(me);
     }
 }

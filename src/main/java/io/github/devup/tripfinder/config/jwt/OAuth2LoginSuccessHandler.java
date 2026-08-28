@@ -53,7 +53,7 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
         ResponseCookie cookie = jwtProvider.createRefreshTokenCookie(refreshToken);
         response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
         // 성공시 리다이렉트
-        response.sendRedirect("http://localhost:5173/oauth/success?token="+accessToken);
+        response.sendRedirect("http://localhost:5173/oauth2/success?token="+accessToken);
     }
 
 }

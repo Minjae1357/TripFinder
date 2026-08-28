@@ -39,6 +39,7 @@ public class JwtProvider {
 
     //토큰생성
     public String createAccessToken(Long userId,String role){
+
         return createToken(userId,role,accessTokenExpiration);
     }
 
@@ -87,6 +88,16 @@ public class JwtProvider {
                 .sameSite("Lax")
                 .path("/api/v1/auth")
                 .maxAge(refreshTokenExpiration/1000)
+                .build();
+    }
+
+    public ResponseCookie deleteRefreshTokenCookie(){
+        return ResponseCookie.from("refreshToken","")
+                .httpOnly(true)
+                .secure(false)
+                .sameSite("Lax")
+                .path("/api/v1/auth")
+                .maxAge(0)
                 .build();
     }
 

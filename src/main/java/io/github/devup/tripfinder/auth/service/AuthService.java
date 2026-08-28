@@ -4,10 +4,12 @@ import io.github.devup.tripfinder.auth.dto.oauth.OAuth2UserInfo;
 import io.github.devup.tripfinder.auth.dto.request.LoginRequest;
 import io.github.devup.tripfinder.auth.dto.request.SignupRequest;
 import io.github.devup.tripfinder.auth.dto.response.TokenResponse;
+import io.github.devup.tripfinder.auth.dto.response.UserInfoResponse;
 import io.github.devup.tripfinder.auth.entity.Users;
 import io.github.devup.tripfinder.auth.repository.UsersRepository;
 import io.github.devup.tripfinder.config.jwt.JwtProvider;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseCookie;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -23,21 +25,15 @@ public class AuthService {
 
     @Transactional
     public Users signup(SignupRequest signupRequest) {
-
+        BCryptPasswordEncoder passwordEncoder =new BCryptPasswordEncoder();
         boolean isSocial = signupRequest.getSocialUid() != null;
+        String  encodedPassword = isSocial ? null : passwordEncoder.encode(signupRequest.getLoginPassword());
         System.out.println(isSocial);
         if(!isSocial) {
             if(!emailService.isEmailVerified(signupRequest.getLoginEmail())){
                 throw new IllegalArgumentException("이메일 인증이 필요합니다.");
             }
         }
-        String encodedPassword = null;
-        BCryptPasswordEncoder passwordEncoder =new BCryptPasswordEncoder();
-        encodedPassword = passwordEncoder.encode(signupRequest.getLoginPassword());
-
-
-
-
         Users user = Users.builder()
                 .loginEmail(signupRequest.getLoginEmail())
                 .loginPassword(encodedPassword)
@@ -51,21 +47,6 @@ public class AuthService {
         return usersRepository.save(user);
     }
 
-    @Transactional
-    public Users socialLoginOrSignUp(OAuth2UserInfo userInfo){
-        return usersRepository.findByProviderAndSocialUid(userInfo.getProvider(),userInfo.getProviderId())
-                .orElseGet(() ->{ //Optional 클래스에서 "값이 비어있을(null일) 때만 대체 값을 생성하여 반환
-                                  //Optional : 값이 존재할 수도 있고, null일 수도 있는 객체"를 감싸는 Wrapper(래퍼) 클래스
-                    Users newUser = Users.builder()
-                            .provider(userInfo.getProvider())
-                            .socialUid(userInfo.getProviderId())
-                            .loginEmail(userInfo.getEmail())
-                            .nickname(userInfo.getNickname() != null ? userInfo.getNickname() : "user_" + userInfo.getProviderId())
-                            .profileUrl(userInfo.getProfileUrl())
-                            .build();
-                    return usersRepository.save(newUser);
-                });
-    }
 
     @Transactional
     public TokenResponse login(LoginRequest loginRequest){
@@ -85,6 +66,14 @@ public class AuthService {
         user.updateRefreshToken(refreshToken);
 
         return new TokenResponse(accessToken,refreshToken);
+    }
+
+    @Transactional
+    public ResponseCookie logout(Long userId){
+        usersRepository.findById(userId).ifPresent(user -> {
+            user.updateRefreshToken(null); //DB에들어있는 리프레쉬토큰 지우기
+        });
+        return jwtProvider.deleteRefreshTokenCookie();
     }
 
     @Transactional(readOnly = true)
@@ -107,5 +96,22 @@ public class AuthService {
     @Transactional
     public boolean isEmailDuplicate(String email,String provider) {
         return usersRepository.existsByLoginEmailAndProvider(email,provider);
+    }
+
+    public UserInfoResponse getMe(Long userId) {
+        Users user = usersRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("존재하지않는 유저입니다."));
+        return UserInfoResponse.builder()
+                .id(user.getId())
+                .loginEmail(user.getLoginEmail())
+                .nickname(user.getNickname())
+                .provider(user.getProvider())
+                .role(user.getRole())
+                .profileUrl(user.getProfileUrl())
+                .location(user.getLocation())
+                .ageGroup(user.getAgeGroup())
+                .gender(user.getGender())
+                .build();
+
     }
 }
