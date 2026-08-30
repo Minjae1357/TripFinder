@@ -18,7 +18,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
-
+import org.springframework.http.HttpMethod;
 import java.util.List;
 
 @Configuration
@@ -42,7 +42,10 @@ public class SecurityConfig {
                         .requestMatchers("/api/v1/place/**").permitAll()
                         .requestMatchers("/api/v1/accommodation/**").permitAll()
                         .requestMatchers("/api/v1/booking/**").permitAll()
-                        .requestMatchers("/api/v1/board/**").permitAll()
+                        .requestMatchers(HttpMethod.GET,"/api/v1/board/**").permitAll()// 조회는 로그인 없이도 가능
+                        .requestMatchers(HttpMethod.POST,"/api/v1/board/**").authenticated() // 작성은 로그인 필수
+                        .requestMatchers(HttpMethod.PUT,"/api/v1/board/**").authenticated()// 수정은 로그인 필수
+                        .requestMatchers(HttpMethod.DELETE,"/api/v1/board/**").authenticated()// 삭제는 로그인 필수
                         .anyRequest().permitAll()   //일단 개발할떄 편해야하니까 다열어둔거
                 )
                 .oauth2Login(oauth2 -> oauth2
