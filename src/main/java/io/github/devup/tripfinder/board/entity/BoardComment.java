@@ -36,7 +36,7 @@ public class BoardComment {
 
     // 댓글 -> 부모댓글( 대댓글이면 원댓글이 뭔가) 셀프조인
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name="parent_id", nullable = false) //일반 댓글이면 null, 대댓글이면 부모 댓글의 id
+    @JoinColumn(name="parent_id", nullable = true) //일반 댓글이면 null, 대댓글이면 부모 댓글의 id
     private BoardComment parent;
 
     @Column(nullable = false, length = 1000)

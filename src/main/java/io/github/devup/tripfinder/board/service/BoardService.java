@@ -3,10 +3,11 @@ package io.github.devup.tripfinder.board.service;
 import io.github.devup.tripfinder.auth.entity.Users;
 import io.github.devup.tripfinder.board.dto.request.BoardCreateRequest;
 import io.github.devup.tripfinder.board.dto.request.BoardUpdateRequest;
-import io.github.devup.tripfinder.board.dto.request.CommentCreatRequest;
+import io.github.devup.tripfinder.board.dto.request.CommentCreateRequest;
 import io.github.devup.tripfinder.board.entity.Board;
 import io.github.devup.tripfinder.board.entity.BoardComment;
 import io.github.devup.tripfinder.board.entity.BoardImg;
+import io.github.devup.tripfinder.board.entity.LikeBoard;
 import io.github.devup.tripfinder.board.repository.BoardCommentRepository;
 import io.github.devup.tripfinder.board.repository.BoardImgRepository;
 import io.github.devup.tripfinder.board.repository.BoardRepository;
@@ -27,7 +28,7 @@ public class BoardService {
     private final LikeBoardRepository likeBoardRepository;
 
     @Transactional
-    public Board createdBoard(Users writer , BoardCreateRequest request){
+    public Board createBoard(Users writer , BoardCreateRequest request){
         // 공지글이면 관리자인지 체크하는곳
         if (request.getCategory().equals("NOTICE") && !writer.getRole().equals("ADMIN")) {
             throw new AccessDeniedException("공지글은 관리자만 작성할 수 있습니다.");
@@ -93,13 +94,13 @@ public class BoardService {
     }
 
     @Transactional
-    public BoardComment createComment(Long boardId, Users writer, CommentCreatRequest request){
+    public BoardComment createComment(Long boardId, Users writer, CommentCreateRequest request){
         Board board = findBoardById(boardId);
 
         BoardComment parent = null;
         if(request.getParentId() != null) {
             parent = boardCommentRepository.findById(request.getParentId())
-                    .orElseThrow(() -> new IllegalArgumentException("대댓글이 없습니다 . "));
+                    .orElseThrow(() -> new IllegalArgumentException("부모 댓글이 없습니다"));
         }
         BoardComment comment = BoardComment.builder()
                 .board(board)
@@ -124,9 +125,38 @@ public class BoardService {
     }
 
 
+    @Transactional(readOnly = true) // 단순 조회
+    public List<Board> getBoardList(String category){
+        if(category == null){
+            return boardRepository.findAllByOrderByCreatedAtDesc();
+        }
+        return boardRepository.findAllByCategory(category); //NOTICE(공지) , REVIEW(리뷰나누기 일반게시판)
+    }
 
+    @Transactional
+    public void toggleLike(Long boardId, Users requester){
+        Board board = findBoardById(boardId);
 
+        if(likeBoardRepository.existsByUserAndBoard(requester, board)){
+            likeBoardRepository.deleteByUserAndBoard(requester,board); //이미눌렀으면 취소하는기능
+        }else{
+            likeBoardRepository.save(LikeBoard.builder().user(requester).board(board).build()); //새로 저장
+        }
+    }
 
+    @Transactional
+    public void deleteComment(Long commentId , Users requester){
+        BoardComment comment = findCommentById(commentId);
+
+        boolean isWriter = comment.getUser().getId().equals(requester.getId());
+        boolean isAdmin = requester.getRole().equals("ADMIN");
+        if(!isWriter && !isAdmin){
+            throw new AccessDeniedException("작성자 본인 또는 관리자만 가능합니다.");
+        }
+        boardCommentRepository.delete(comment);
+    }
+
+    //이아래쪽은 중복부분 줄여둔거
     private Board findBoardById(Long boardId) {
         return boardRepository.findById(boardId)
                 .orElseThrow(() -> new IllegalArgumentException("게시글이 없습니다."));

@@ -8,6 +8,6 @@ import java.util.List;
 
 @Repository
 public interface BoardRepository extends JpaRepository<Board,Long> {
-    List<Board> findByCategory(String category); //카테고리별 조회
-    List<Board> findByOrderByCreatedAtDesc(); //전체 목록, 최신순
+    List<Board> findAllByCategory(String category); //카테고리별 조회
+    List<Board> findAllByOrderByCreatedAtDesc(); //전체 목록, 최신순
 }
