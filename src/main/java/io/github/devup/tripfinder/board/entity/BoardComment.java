@@ -67,4 +67,5 @@ public class BoardComment {
     public boolean isReply(){
         return this.parent != null;
     }
+
 }

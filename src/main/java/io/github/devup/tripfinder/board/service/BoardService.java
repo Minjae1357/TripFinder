@@ -53,10 +53,48 @@ public class BoardService {
         return board;
     }
 
+    // findById로 가져온 객체의 값을 내가 바꾸면
+    // @Transactional 범위가 끝날 때 JPA가 변경을 감지해서 자동으로 UPDATE 쿼리를 실행한다
+    @Transactional
+    public void updateBoard(Long boardId, Users requester, BoardUpdateRequest request){
+        Board board = findBoardById(boardId);
+        checkWriterOrAdmin(board,requester);
+        board.update(request.getTitle(),request.getContents());
+    }
+
+    @Transactional
+    public void deleteBoard(Long boardId , Users requester){
+        Board board = findBoardById(boardId);
+        checkWriterOrAdmin(board,requester);
+        boardImgRepository.deleteAllByBoard(board);
+        boardCommentRepository.deleteAllByBoard(board);
+        likeBoardRepository.deleteAllByBoard(board);
+        boardRepository.delete(board);
+    }
+
+    @Transactional
+    public Board getBoard(Long boardId){
+        Board board = findBoardById(boardId);
+        board.increaseHit(); // findbyid 이걸로 찾은값을 변경시키면 어노테이션이 update해줌
+        return board;
+    }
+
+
+    @Transactional //단순 조회
+    public List<BoardComment> getComment(Long boardId){
+        Board board = findBoardById(boardId);
+        return boardCommentRepository.findByBoard(board);
+    }
+
+    @Transactional(readOnly = true)
+    public long getLikeCount(Long boardId){
+        Board board = findBoardById(boardId);
+        return likeBoardRepository.countByBoard(board);
+    }
+
     @Transactional
     public BoardComment createComment(Long boardId, Users writer, CommentCreatRequest request){
-        Board board = boardRepository.findById(boardId)
-                .orElseThrow(() -> new IllegalArgumentException("게시글이 없습니다."));
+        Board board = findBoardById(boardId);
 
         BoardComment parent = null;
         if(request.getParentId() != null) {
@@ -73,6 +111,27 @@ public class BoardService {
     }
 
 
+    @Transactional
+    public void updateComment(Long commentId,Users requester,String contents){
+        BoardComment comment = findCommentById(commentId);
+
+        boolean isWriter = comment.getUser().getId().equals(requester.getId());
+        boolean isAdmin = requester.getRole().equals("ADMIN");
+        if(!isWriter && !isAdmin){
+            throw new AccessDeniedException("작성자 본인 또는 관리자만 가능합니다");
+        }
+        comment.updateContents(contents);
+    }
+
+
+
+
+
+    private Board findBoardById(Long boardId) {
+        return boardRepository.findById(boardId)
+                .orElseThrow(() -> new IllegalArgumentException("게시글이 없습니다."));
+    }
+
     private void checkWriterOrAdmin(Board board,Users requester){
         boolean isWriter = board.getUser().getId().equals(requester.getId());
         boolean isAdmin = requester.getRole().equals("ADMIN");
@@ -81,27 +140,9 @@ public class BoardService {
         }
     }
 
-    // findById로 가져온 객체의 값을 내가 바꾸면
-    // @Transactional 범위가 끝날 때 JPA가 변경을 감지해서 자동으로 UPDATE 쿼리를 실행한다
-    @Transactional
-    public void updateBoard(Long boardId, Users requester, BoardUpdateRequest request){
-        Board board = boardRepository.findById(boardId)
-                .orElseThrow(() -> new IllegalArgumentException("게시글 없음"));
-
-        checkWriterOrAdmin(board,requester);
-        board.update(request.getTitle(),request.getContents());
-    }
-
-    @Transactional
-    public void deleteBoard(Long boardId , Users requester){
-        Board board = boardRepository.findById(boardId)
-                .orElseThrow(() -> new IllegalArgumentException("게시글이없음"));
-
-        checkWriterOrAdmin(board,requester);
-        boardImgRepository.deleteAllByBoard(board);
-        boardCommentRepository.deleteAllByBoard(board);
-        likeBoardRepository.deleteAllByBoard(board);
-        boardRepository.delete(board);
+    private BoardComment findCommentById(Long commentId) {
+        return boardCommentRepository.findById(commentId)
+                .orElseThrow(() -> new IllegalArgumentException("댓글이 없습니다."));
     }
 
 }
