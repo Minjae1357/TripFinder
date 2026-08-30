@@ -26,7 +26,8 @@ public class AuthService {
     @Transactional
     public Users signup(SignupRequest signupRequest) {
         BCryptPasswordEncoder passwordEncoder =new BCryptPasswordEncoder();
-        boolean isSocial = signupRequest.getSocialUid() != null;
+        //비어있거나 공백만 있는지 isBlank()
+        boolean isSocial = signupRequest.getSocialUid() != null && !signupRequest.getSocialUid().isBlank();
         String  encodedPassword = isSocial ? null : passwordEncoder.encode(signupRequest.getLoginPassword());
         System.out.println(isSocial);
         if(!isSocial) {
