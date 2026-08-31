@@ -5,6 +5,7 @@ import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 @Getter
 @Entity
@@ -18,6 +19,7 @@ public class BoardImg {
 
     @ManyToOne(fetch = FetchType.LAZY) // 이 사진이 어느 게시글에 첨부됫는지확인
     @JoinColumn(name = "board_id")
+    @JsonIgnore // 이방향은 json직렬화에서 제외한다는 어노테이션
     private Board board;
 
     @Column(name = "img_url", nullable = false, length = 500)
