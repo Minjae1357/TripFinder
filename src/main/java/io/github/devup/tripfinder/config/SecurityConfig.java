@@ -41,6 +41,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/v1/auth/**").permitAll()
                         .requestMatchers("/api/v1/place/**").permitAll()
                         .requestMatchers("/api/v1/accommodation/**").permitAll()
+
                         .requestMatchers("/api/v1/booking/**").permitAll()
                         .requestMatchers(HttpMethod.GET,"/api/v1/board/**").permitAll()// 조회는 로그인 없이도 가능
                         .requestMatchers(HttpMethod.POST,"/api/v1/board/**").authenticated() // 작성은 로그인 필수
