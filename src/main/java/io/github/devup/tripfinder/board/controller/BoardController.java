@@ -53,7 +53,7 @@ public class BoardController {
         return ResponseEntity.ok(boardService.getBoard(boardId));
     }
 
-    @PutMapping("/{board}")
+    @PutMapping("/{boardId}")
     public ResponseEntity<?> updateBoard(@PathVariable Long boardId ,
                                          @RequestBody BoardUpdateRequest request,
                                          Authentication authentication){
@@ -98,12 +98,12 @@ public class BoardController {
         return ResponseEntity.ok(boardService.getComment(boardId));
     }
 
-    @GetMapping("/comments/{commentId}")
+    @PutMapping("/comments/{commentId}")
     public ResponseEntity<?> updateComment(@PathVariable Long commentId,
                                            @RequestBody CommentUpdateRequest request,
                                            Authentication authentication){
         Long requesterId = getCurrentUserId(authentication);
-        boardService.updateComment(commentId,requesterId,request.getComments());
+        boardService.updateComment(commentId,requesterId,request.getContents());
         return ResponseEntity.ok().build();
     }
 
