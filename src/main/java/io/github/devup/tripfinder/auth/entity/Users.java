@@ -11,10 +11,11 @@ import java.time.LocalDateTime;
 
 @Getter
 @Entity
-@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@NoArgsConstructor(access = AccessLevel.PROTECTED) //new entity못만들게하고 빌더로 접근하면더좋음
 @EntityListeners(AuditingEntityListener.class) // 엔티티가 Auditing감시대상등록 created_at, updated_at 자동 갱신용
 @Table(name="USERS",uniqueConstraints = {
-        @UniqueConstraint(name="UK_login_email",columnNames = "login_email"),
+        //고유제약조건
+        @UniqueConstraint(name="UK_login_email_provider",columnNames = {"login_email","provider"}),
         @UniqueConstraint(name="UK_provider_social_uid",columnNames = {"provider","social_uid"})
 })
 public class Users {
@@ -36,7 +37,7 @@ public class Users {
     @Column(name="social_uid",length = 100)
     private String socialUid;
 
-    @Column(nullable = false, length = 30)
+    @Column(nullable = false, length = 100) //긴문자열이라 30 -> 100으로 수정
     private String nickname;
 
     @Column(length = 50)
