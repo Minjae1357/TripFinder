@@ -1,30 +1,24 @@
-package io.github.devup.tripfinder.booking.entity;
+package io.github.devup.tripfinder.cart.entity;
 
 import jakarta.persistence.*;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "booking")
+@Table(name="cart")
 @Data
 @NoArgsConstructor
-public class Booking {
+public class Cart {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "booking_id")
-    private Long bookingId;
+    @Column(name = "cart_id")
+    private Long cartId;
 
+    // 추후 유저 구현시 변경 예정, 테스트 용 엔티티
     @Column(name = "user_id", nullable = false)
     private Long userId;
-
-    @Column(name = "total_amount", nullable = false)
-    private BigDecimal totalAmount;
-
-    @Column(name = "booking_status", nullable = false)
-    private String bookingStatus;
 
     @Column(name = "created_at", insertable = false, updatable = false)
     private LocalDateTime createdAt;

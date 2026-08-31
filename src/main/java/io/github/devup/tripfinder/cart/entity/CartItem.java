@@ -1,26 +1,26 @@
-package io.github.devup.tripfinder.booking.entity;
+package io.github.devup.tripfinder.cart.entity;
 
 import io.github.devup.tripfinder.accommodation.entity.Room;
 import jakarta.persistence.*;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Entity
-@Table(name="booking_item")
+@Table(name = "cart_item")
 @Data
 @NoArgsConstructor
-public class BookingItem {
+public class CartItem {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "booking_item_id")
-    private Long bookingItemId;
+    @Column(name = "cart_item_id")
+    private Long cartItemId;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "booking_id", nullable = false)
-    private Booking booking;
+    @JoinColumn(name = "cart_id", nullable = false)
+    private Cart cart;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "room_id", nullable = false)
@@ -32,15 +32,12 @@ public class BookingItem {
     @Column(name = "check_out_date", nullable = false)
     private LocalDate checkOutDate;
 
-    @Column(name = "room_quantity", nullable = false)
+    @Column(name = "room_quantity",  nullable = false)
     private Integer roomQuantity;
 
     @Column(name = "guest_count", nullable = false)
     private Integer guestCount;
 
-    @Column(name = "unit_price", nullable = false)
-    private BigDecimal unitPrice;   // 예약 시점 1박 가격 스냅샷
-
-    @Column(name = "subtotal", nullable = false)
-    private BigDecimal subtotal;
+    @Column(name = "created_at", insertable = false, updatable = false)
+    private LocalDateTime createdAt;
 }

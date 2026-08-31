@@ -6,6 +6,8 @@ import io.github.devup.tripfinder.accommodationreview.dto.response.Accommodation
 import io.github.devup.tripfinder.accommodationreview.dto.response.AccommodationReviewResponse;
 import io.github.devup.tripfinder.accommodationreview.dto.response.AccommodationReviewSummaryResponse;
 import io.github.devup.tripfinder.accommodationreview.exception.AccommodationReviewEditCooldownException;
+import io.github.devup.tripfinder.accommodationreview.exception.AccommodationReviewNotEligibleException;
+import io.github.devup.tripfinder.accommodationreview.exception.AccommodationReviewNotOwnerException;
 import io.github.devup.tripfinder.accommodationreview.service.AccommodationReviewService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -80,9 +82,19 @@ public class AccommodationReviewController {
         return accommodationReviewService.getReview(reviewId);
     }
 
-    // 예외처리 메시지 전달
+    // 예외처리
     @ExceptionHandler(AccommodationReviewEditCooldownException.class)
     public ResponseEntity<String> handleAccommodationReviewEditCooldown(AccommodationReviewEditCooldownException e){
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(e.getMessage());
+    }
+
+    @ExceptionHandler(AccommodationReviewNotEligibleException.class)
+    public ResponseEntity<String> handleAccommodationReviewNotEligible(AccommodationReviewNotEligibleException e){
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(e.getMessage());
+    }
+
+    @ExceptionHandler(AccommodationReviewNotOwnerException.class)
+    public ResponseEntity<String> handleAccommodationReviewNotOwner(AccommodationReviewNotOwnerException e){
         return ResponseEntity.status(HttpStatus.CONFLICT).body(e.getMessage());
     }
 

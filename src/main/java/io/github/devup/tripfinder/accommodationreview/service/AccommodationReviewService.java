@@ -10,8 +10,11 @@ import io.github.devup.tripfinder.accommodationreview.dto.response.Accommodation
 import io.github.devup.tripfinder.accommodationreview.entity.AccommodationReview;
 import io.github.devup.tripfinder.accommodationreview.entity.AccommodationReviewImg;
 import io.github.devup.tripfinder.accommodationreview.exception.AccommodationReviewEditCooldownException;
+import io.github.devup.tripfinder.accommodationreview.exception.AccommodationReviewNotEligibleException;
+import io.github.devup.tripfinder.accommodationreview.exception.AccommodationReviewNotOwnerException;
 import io.github.devup.tripfinder.accommodationreview.repository.AccommodationReviewImgRepository;
 import io.github.devup.tripfinder.accommodationreview.repository.AccommodationReviewRepository;
+import io.github.devup.tripfinder.booking.repository.BookingRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -34,10 +37,16 @@ public class AccommodationReviewService {
     private final FileStorageService fileStorageService;
 
     private static final Long TEMP_USER_ID = 1L; // 테스트용 임시 고정 user_id
+    private final BookingRepository bookingRepository;
 
     // 리뷰 쓰기
     @Transactional
     public Long createReview(Long accommodationId, AccommodationReviewCreateRequest request, List<MultipartFile> images) {
+
+        if(!bookingRepository.existsConfirmedBookingByUserAndAccommodation(TEMP_USER_ID, accommodationId)){
+            throw new AccommodationReviewNotEligibleException("예약이 확정된 숙소에만 리뷰를 작성할 수 있습니다.");
+        }
+
         Accommodation accommodation = accommodationRepository.findById(accommodationId).orElseThrow(()-> new IllegalArgumentException("숙소를 찾을 수 없습니다. id=" + accommodationId));
 
         AccommodationReview review = new AccommodationReview();
@@ -106,7 +115,7 @@ public class AccommodationReviewService {
     // 작성자 검증
     private void validateOwner(AccommodationReview review) {
         if(!review.getUserId().equals(TEMP_USER_ID)) {
-            throw new IllegalStateException("본인이 작성한 리뷰만 수정/삭제할 수 있습니다.");
+            throw new AccommodationReviewNotOwnerException("본인이 작성한 리뷰만 수정/삭제할 수 있습니다.");
         }
     }
 
