@@ -1,7 +1,6 @@
 package io.github.devup.tripfinder.accommodationreview.entity;
 
 import io.github.devup.tripfinder.accommodation.entity.Accommodation;
-import io.github.devup.tripfinder.auth.entity.Users;
 import jakarta.persistence.*;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -22,12 +21,6 @@ public class AccommodationReview {
     @JoinColumn(name = "accommodation_id", nullable = false)
     private Accommodation accommodation;
 
-    // USER구현 후
-//    @ManyToOne(fetch = FetchType.LAZY)
-//    @JoinColumn(name = "user_id", nullable = false)
-//    private Users userid;
-
-    // test용 user entity
     @Column(name = "user_id", nullable = false)
     private Long userId;
 

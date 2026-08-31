@@ -4,6 +4,7 @@ import io.github.devup.tripfinder.auth.service.CustomOAuth2UserService;
 import io.github.devup.tripfinder.config.jwt.JwtAuthenticationFilter;
 import io.github.devup.tripfinder.config.jwt.JwtProvider;
 import io.github.devup.tripfinder.config.jwt.OAuth2LoginSuccessHandler;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 
@@ -40,15 +41,32 @@ public class SecurityConfig {
                         .requestMatchers("/api/v1/auth/me").permitAll()
                         .requestMatchers("/api/v1/auth/**").permitAll()
                         .requestMatchers("/api/v1/place/**").permitAll()
-                        .requestMatchers("/api/v1/accommodation/**").permitAll()
+                        // accommodation 조회는 전체 공개, 나머지는 로그인필요
+                        .requestMatchers(HttpMethod.GET,"/api/v1/accommodation/**").permitAll()
+                        // accommodation review - 조회는 공개, 작성/수정/삭제는 로그인 필요
+                        .requestMatchers(HttpMethod.GET,"/api/v1/accommodation/*/reviews/**").permitAll()
+                        .requestMatchers(HttpMethod.POST,"/api/v1/accommodation/*/reviews/**").authenticated()
+                        .requestMatchers(HttpMethod.PATCH,"/api/v1/accommodation/*/reviews/**").authenticated()
+                        .requestMatchers(HttpMethod.DELETE,"/api/v1/accommodation/*/reviews/**").authenticated()
+                        // cart - 로그인 필요
+                        .requestMatchers("/api/v1/cart/**").authenticated()
+                        // booking - 예약 이력 확인만 비로그인(추천 로직에 사용), 그 외 로그인 필요
+                        .requestMatchers(HttpMethod.GET,"/api/v1/bookings/check").permitAll()
+                        .requestMatchers("/api/v1/bookings/**").authenticated()
 
-                        .requestMatchers("/api/v1/booking/**").permitAll()
                         .requestMatchers(HttpMethod.GET,"/api/v1/board/**").permitAll()// 조회는 로그인 없이도 가능
                         .requestMatchers(HttpMethod.POST,"/api/v1/board/**").authenticated() // 작성은 로그인 필수
                         .requestMatchers(HttpMethod.PUT,"/api/v1/board/**").authenticated()// 수정은 로그인 필수
                         .requestMatchers(HttpMethod.DELETE,"/api/v1/board/**").authenticated()// 삭제는 로그인 필수
                         .anyRequest().permitAll()   //일단 개발할떄 편해야하니까 다열어둔거
                 )
+                // cart에서 인증 실패 시 리다이렉트 현상 막고자 추가
+                .exceptionHandling(exception -> exception
+                        .authenticationEntryPoint((request, response,authException) -> {
+                            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED); // 401
+                            response.setContentType("application/json;charset=UTF-8");
+                            response.getWriter().write("{\"message\":\"로그인이 필요합니다.\"}");
+                        }))
                 .oauth2Login(oauth2 -> oauth2
                         .userInfoEndpoint(userInfo -> userInfo.userService(customOAuth2UserService))
                         .successHandler( oAuth2LoginSuccessHandler)
@@ -63,7 +81,7 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
         configuration.setAllowedOrigins(List.of("http://localhost:5173"));
-        configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("*"));
         configuration.setAllowCredentials(true);
 

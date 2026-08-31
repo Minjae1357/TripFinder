@@ -36,14 +36,13 @@ public class AccommodationReviewService {
     private final AccommodationRepository accommodationRepository;
     private final FileStorageService fileStorageService;
 
-    private static final Long TEMP_USER_ID = 1L; // 테스트용 임시 고정 user_id
     private final BookingRepository bookingRepository;
 
     // 리뷰 쓰기
     @Transactional
-    public Long createReview(Long accommodationId, AccommodationReviewCreateRequest request, List<MultipartFile> images) {
+    public Long createReview(Long userId, Long accommodationId, AccommodationReviewCreateRequest request, List<MultipartFile> images) {
 
-        if(!bookingRepository.existsConfirmedBookingByUserAndAccommodation(TEMP_USER_ID, accommodationId)){
+        if(!bookingRepository.existsConfirmedBookingByUserAndAccommodation(userId, accommodationId)){
             throw new AccommodationReviewNotEligibleException("예약이 확정된 숙소에만 리뷰를 작성할 수 있습니다.");
         }
 
@@ -51,7 +50,7 @@ public class AccommodationReviewService {
 
         AccommodationReview review = new AccommodationReview();
         review.setAccommodation(accommodation);
-        review.setUserId(TEMP_USER_ID);
+        review.setUserId(userId);
         review.setStar(request.star());
         review.setReviewContents(request.reviewContents());
 
@@ -77,11 +76,11 @@ public class AccommodationReviewService {
 
     // 리뷰 수정
     @Transactional
-    public void updateReview(Long reviewId, AccommodationReviewUpdateRequest request) {
+    public void updateReview(Long userId, Long reviewId, AccommodationReviewUpdateRequest request) {
         AccommodationReview review = accommodationReviewRepository.findById(reviewId).orElseThrow(() -> new IllegalArgumentException("리뷰를 찾을 수 없습니다. ID = "+reviewId));
 
-        // 본인 확인(로그인 합치기 전까지 TEMP_USER_ID와 비교)
-        validateOwner(review);
+        // 본인 확인
+        validateOwner(userId, review);
         validateEditCooldown(review); // 리뷰 수정 10초 제한 추가
 
         review.setStar(request.star());
@@ -103,18 +102,18 @@ public class AccommodationReviewService {
 
     // 리뷰 삭제
     @Transactional
-    public void deleteReview(Long reviewId) {
+    public void deleteReview(Long userId, Long reviewId) {
         AccommodationReview review = accommodationReviewRepository.findById(reviewId).orElseThrow(() -> new IllegalArgumentException("리뷰를 찾을 수 업습니다. ID = "+reviewId));
 
-        validateOwner(review);
+        validateOwner(userId, review);
 
         accommodationReviewImgRepository.deleteAll(accommodationReviewImgRepository.findByReview_ReviewIdOrderByImgOrder(reviewId));
         accommodationReviewRepository.delete(review);
     }
 
     // 작성자 검증
-    private void validateOwner(AccommodationReview review) {
-        if(!review.getUserId().equals(TEMP_USER_ID)) {
+    private void validateOwner(Long userId, AccommodationReview review) {
+        if(!review.getUserId().equals(userId)) {
             throw new AccommodationReviewNotOwnerException("본인이 작성한 리뷰만 수정/삭제할 수 있습니다.");
         }
     }
@@ -162,14 +161,6 @@ public class AccommodationReviewService {
         Double avg = accommodationReviewRepository.findAverageStarByAccommodationId(accommodationId);
         long count = accommodationReviewRepository.countByAccommodation_AccommodationId(accommodationId);
         return new AccommodationReviewSummaryResponse(avg != null ? avg : 0.0 , count); // 리뷰 0개 일시 avg = null 예외처리
-    }
-
-    // 리뷰 전체 조회
-    @Transactional(readOnly = true)
-    public List<AccommodationReviewResponse> getReviews(Long accommodationId){
-        List<AccommodationReview> reviews = accommodationReviewRepository.findByAccommodation_AccommodationId(accommodationId);
-
-        return reviews.stream().map(this::toResponse).toList();
     }
 
     private AccommodationReviewResponse toResponse(AccommodationReview review){

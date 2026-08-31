@@ -9,6 +9,7 @@ import io.github.devup.tripfinder.accommodationreview.exception.AccommodationRev
 import io.github.devup.tripfinder.accommodationreview.exception.AccommodationReviewNotEligibleException;
 import io.github.devup.tripfinder.accommodationreview.exception.AccommodationReviewNotOwnerException;
 import io.github.devup.tripfinder.accommodationreview.service.AccommodationReviewService;
+import io.github.devup.tripfinder.common.security.SecurityUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -19,7 +20,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/accommodations/{accommodationId}/reviews")
+@RequestMapping("/api/v1/accommodations/{accommodationId}/reviews")
 @RequiredArgsConstructor
 public class AccommodationReviewController {
     private final AccommodationReviewService accommodationReviewService;
@@ -48,7 +49,7 @@ public class AccommodationReviewController {
             @RequestPart("review")AccommodationReviewCreateRequest request, // JSON 데이터
             @RequestPart(value = "images", required = false) List<MultipartFile> images // 파일
     ){
-        Long reviewId = accommodationReviewService.createReview(accommodationId, request, images);
+        Long reviewId = accommodationReviewService.createReview(SecurityUtil.getCurrentUserId(), accommodationId, request, images);
         return ResponseEntity.status(HttpStatus.CREATED).body(reviewId);
     }
 
@@ -59,7 +60,7 @@ public class AccommodationReviewController {
             @PathVariable Long reviewId,
             @RequestBody AccommodationReviewUpdateRequest request
             ){
-        accommodationReviewService.updateReview(reviewId, request);
+        accommodationReviewService.updateReview(SecurityUtil.getCurrentUserId(), reviewId, request);
         return ResponseEntity.noContent().build();
     }
 
@@ -69,7 +70,7 @@ public class AccommodationReviewController {
             @PathVariable Long accommodationId,
             @PathVariable Long reviewId
     ){
-        accommodationReviewService.deleteReview(reviewId);
+        accommodationReviewService.deleteReview(SecurityUtil.getCurrentUserId(), reviewId);
         return ResponseEntity.noContent().build();
     }
 
@@ -98,9 +99,8 @@ public class AccommodationReviewController {
         return ResponseEntity.status(HttpStatus.CONFLICT).body(e.getMessage());
     }
 
-    // 리뷰 전체 조회(일단 안씀)
-//    @GetMapping
-//    public List<AccommodationReviewResponse> getReviews(@PathVariable Long accommodationId) {
-//        return accommodationReviewService.getReviews(accommodationId);
-//    }
+    @ExceptionHandler(IllegalStateException.class)
+    public ResponseEntity<String> handleIllegalState(IllegalStateException e){
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(e.getMessage());
+    }
 }

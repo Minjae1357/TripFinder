@@ -29,13 +29,10 @@ public class CartService {
     private final CartItemRepository cartItemRepository;
     private final RoomRepository roomRepository;
 
-    // 로그인 구현 전까지 임시 고정 사용자
-    private static final Long TEMP_USER_ID = 1L;
-
     // 장바구니에 추가
     @Transactional
-    public void addItem(CartItemAddRequest request){
-        Cart cart = getOrCreateCart();
+    public void addItem(Long userId, CartItemAddRequest request){
+        Cart cart = getOrCreateCart(userId);
 
         Room room = roomRepository.findById(request.roomId()).orElseThrow(() -> new RoomNotFoundException("객실을 찾을 수 없습니다. id = " + request.roomId()));
 
@@ -54,15 +51,15 @@ public class CartService {
     }
 
     @Transactional(readOnly = true)
-    public CartResponse getCart(){
-        return cartRepository.findByUserId(TEMP_USER_ID).map(this::toResponse).orElseGet(()->new CartResponse(null, List.of(), BigDecimal.ZERO));
+    public CartResponse getCart(Long userId){
+        return cartRepository.findByUserId(userId).map(this::toResponse).orElseGet(()->new CartResponse(null, List.of(), BigDecimal.ZERO));
     }
 
     @Transactional
-    public void updateItem(Long cartItemId, CartItemUpdateRequest request){
+    public void updateItem(Long userId, Long cartItemId, CartItemUpdateRequest request){
         CartItem item = cartItemRepository.findById(cartItemId).orElseThrow(()-> new CartItemNotFoundException("장바구니 항목을 찾을 수 없습니다. id = " + cartItemId));
 
-        validateOwner(item);
+        validateOwner(userId, item);
 
         // 최대 인원, 체크인아웃 날짜 검증
         validateCartItemRequest(item.getRoom(), request.guestCount(), request.roomQuantity(), request.checkInDate(), request.checkOutDate());
@@ -74,24 +71,24 @@ public class CartService {
     }
 
     @Transactional
-    public void deleteItem(Long cartItemId){
+    public void deleteItem(Long userId, Long cartItemId){
         CartItem item = cartItemRepository.findById(cartItemId).orElseThrow(()-> new CartItemNotFoundException("장바구니 항목을 찾을 수 없습니다. id = " + cartItemId));
 
-        validateOwner(item);
+        validateOwner(userId, item);
         cartItemRepository.delete(item);
     }
 
-    private Cart getOrCreateCart(){
-        return cartRepository.findByUserId(TEMP_USER_ID).orElseGet(()->{
+    private Cart getOrCreateCart(Long userId){
+        return cartRepository.findByUserId(userId).orElseGet(()->{
             Cart newCart = new Cart();
-            newCart.setUserId(TEMP_USER_ID);
+            newCart.setUserId(userId);
             return cartRepository.save(newCart);
         });
     }
 
     // 본인 장바구니 항목 확인
-    private void validateOwner(CartItem item){
-        if(!item.getCart().getUserId().equals(TEMP_USER_ID)){
+    private void validateOwner(Long userId, CartItem item){
+        if(!item.getCart().getUserId().equals(userId)){
             throw new CartItemNotOwnerException("본인의 장바구니만 수정/삭제할 수 있습니다."); // 본인 외의 장바구니가 보이는 상황 방지
         }
     }
