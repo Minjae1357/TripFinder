@@ -183,10 +183,10 @@ public class BoardService {
         if(!dir.exists()) dir.mkdirs();
 
         for(MultipartFile file : files){
-            String fileName = UUID.randomUUID().toString() + "." + file.getOriginalFilename();  //원래있는 파일이랑 안겹치게
+            String fileName = UUID.randomUUID().toString() + "_" + file.getOriginalFilename();  //원래있는 파일이랑 안겹치게
             File dest = new File(uploadDir + fileName);
             file.transferTo(dest); //실제로 업로드된 파일 내용을 그 경로에 저장 (진짜 디스크에 쓰는 부분)
-            urls.add("/uploads/board" + fileName); // 저장 성공한 파일의 접근 URL을 리스트에 추가
+            urls.add("/uploads/board/" + fileName); // 저장 성공한 파일의 접근 URL을 리스트에 추가
             // 이 URL이 나중에 게시글 작성 시 BoardCreateRequest.imgUrls에 담겨서 쓰임
         }
         return urls;

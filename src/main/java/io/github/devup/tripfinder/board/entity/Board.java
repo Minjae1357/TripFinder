@@ -12,6 +12,8 @@ import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Getter
 @Entity
@@ -49,6 +51,9 @@ public class Board {
     @LastModifiedDate // update 될떄 자동 갱신
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
+
+    @OneToMany(mappedBy = "board", fetch = FetchType.LAZY) //boardimg.board 필드 기준으로 역방향 연결
+    private final List<BoardImg> boardImgs = new ArrayList<>();
 
     @Builder
     public Board(Users user, String category , String title, String contents){
