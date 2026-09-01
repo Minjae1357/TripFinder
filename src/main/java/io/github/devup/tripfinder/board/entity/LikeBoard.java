@@ -18,7 +18,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @EntityListeners(AuditingEntityListener.class) // 시간 관련된거 자동저장기능쓰려면필요한거
 @Table(name = "like_board")
-@IdClass(LikeBoard.class) //복합키 클래스에 연결하기
+@IdClass(LikeBoardId.class) //복합키 클래스에 연결하기
 public class LikeBoard {
 
     @Id
